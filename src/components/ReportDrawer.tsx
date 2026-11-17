@@ -1,22 +1,102 @@
-import { useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Copy, Crosshair, MapPin, ShieldAlert, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  APILoadingStatus,
+  AdvancedMarker,
+  ColorScheme,
+  Map as GoogleMap,
+  Pin,
+  useApiLoadingStatus,
+  useMap,
+} from '@vis.gl/react-google-maps';
+import {
+  CheckCircle2,
+  Copy,
+  Crosshair,
+  Loader2,
+  MapPin,
+  Mic,
+  ShieldAlert,
+  Square,
+  X,
+} from 'lucide-react';
 import { MIRA_BHAYANDAR_LOCALITIES } from '../data/miraBhayandarData';
 import type { TranslationBundle } from '../data/translations';
 import type { NewTicketInput } from '../hooks/useLedgerStore';
-import type { CivicTicket, IssueCategory } from '../types/civic';
+import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
+import type { CivicTicket, IssueCategory, LanguageCode, ThemeMode } from '../types/civic';
 import { findNearbyDuplicates, getTicketCps } from '../utils/ledgerEngine';
 
 interface ReportDrawerProps {
   open: boolean;
   t: TranslationBundle;
+  language: LanguageCode;
   tickets: CivicTicket[];
   confirmedTicketIds: string[];
   nowMs: number;
+  theme: ThemeMode;
+  mapsEnabled: boolean;
   initialLocalityId?: string;
   onClose: () => void;
   onConfirmDuplicate: (ticketId: string) => void;
   onCreateTicket: (input: NewTicketInput) => CivicTicket;
   onInspectTicket: (ticketId: string) => void;
+}
+
+function ReportPickerPanSync({ coords }: { coords: { lat: number; lng: number } }) {
+  const map = useMap('report-pin-picker-map');
+  useEffect(() => {
+    if (!map) return;
+    map.panTo(coords);
+  }, [map, coords.lat, coords.lng]);
+  return null;
+}
+
+function ReportPinMapPicker({
+  coords,
+  theme,
+  onPickCoords,
+}: {
+  coords: { lat: number; lng: number };
+  theme: ThemeMode;
+  onPickCoords: (next: { lat: number; lng: number }) => void;
+}) {
+  const apiStatus = useApiLoadingStatus();
+  if (
+    apiStatus === APILoadingStatus.FAILED ||
+    apiStatus === APILoadingStatus.AUTH_FAILURE
+  ) {
+    return null;
+  }
+
+  return (
+    <div className="report-map-picker" aria-label="Interactive incident pin map">
+      <GoogleMap
+        id="report-pin-picker-map"
+        mapId="DEMO_MAP_ID"
+        defaultCenter={coords}
+        defaultZoom={15}
+        colorScheme={theme === 'dark' ? ColorScheme.DARK : ColorScheme.LIGHT}
+        gestureHandling="greedy"
+        disableDefaultUI
+        zoomControl
+        internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
+        style={{ width: '100%', height: '100%' }}
+        onClick={(ev) => {
+          if (ev.detail.latLng) {
+            onPickCoords({
+              lat: Number(ev.detail.latLng.lat.toFixed(5)),
+              lng: Number(ev.detail.latLng.lng.toFixed(5)),
+            });
+          }
+        }}
+      >
+        <ReportPickerPanSync coords={coords} />
+        <AdvancedMarker position={coords} title="Incident location pin">
+          <Pin background="#C8321A" borderColor="#111315" glyphColor="#FFFFFF" />
+        </AdvancedMarker>
+      </GoogleMap>
+    </div>
+  );
 }
 
 const CATEGORIES: IssueCategory[] = [
@@ -30,18 +110,27 @@ const CATEGORIES: IssueCategory[] = [
 export function ReportDrawer({
   open,
   t,
+  language,
   tickets,
   confirmedTicketIds,
   nowMs,
+  theme,
+  mapsEnabled,
   initialLocalityId,
   onClose,
   onConfirmDuplicate,
   onCreateTicket,
   onInspectTicket,
 }: ReportDrawerProps) {
-  const [localityId, setLocalityId] = useState<string>(
-    initialLocalityId || MIRA_BHAYANDAR_LOCALITIES[0].id
-  );
+  const defaultLoc =
+    MIRA_BHAYANDAR_LOCALITIES.find((l) => l.id === initialLocalityId) ??
+    MIRA_BHAYANDAR_LOCALITIES[0];
+
+  const [localityId, setLocalityId] = useState<string>(defaultLoc.id);
+  const [pinnedCoords, setPinnedCoords] = useState<{ lat: number; lng: number }>({
+    lat: defaultLoc.lat,
+    lng: defaultLoc.lng,
+  });
   const [category, setCategory] = useState<IssueCategory>('road');
   const [title, setTitle] = useState<string>('');
   const [streetAddress, setStreetAddress] = useState<string>('');
@@ -58,9 +147,29 @@ export function ReportDrawer({
 
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
+  const handleVoiceReport = useCallback((transcript: string) => {
+    setDescription((prev) => (prev.trim() ? `${prev.trim()} ${transcript}` : transcript));
+    setTitle((prevTitle) => {
+      if (prevTitle.trim().length > 0) return prevTitle;
+      const firstSentence = transcript.split(/[.!?।\n]/)[0]?.trim() || transcript;
+      const words = firstSentence.split(/\s+/).slice(0, 10).join(' ');
+      return words.slice(0, 90);
+    });
+  }, []);
+
+  const voice = useVoiceRecorder({
+    language,
+    purpose: 'report',
+    onTranscript: handleVoiceReport,
+  });
+
   useEffect(() => {
     if (initialLocalityId) {
       setLocalityId(initialLocalityId);
+      const match = MIRA_BHAYANDAR_LOCALITIES.find((l) => l.id === initialLocalityId);
+      if (match) {
+        setPinnedCoords({ lat: match.lat, lng: match.lng });
+      }
     }
   }, [initialLocalityId]);
 
@@ -108,6 +217,7 @@ export function ReportDrawer({
 
   const handleSimulateGps = () => {
     setGpsLocked(true);
+    setPinnedCoords({ lat: selectedLocality.lat, lng: selectedLocality.lng });
     setStreetAddress(`${selectedLocality.name}, ${selectedLocality.landmark}`);
   };
 
@@ -127,6 +237,8 @@ export function ReportDrawer({
       description,
       streetAddress: streetAddress || `${selectedLocality.name}, ${selectedLocality.prabhag}`,
       phone: phoneTrimmed || undefined,
+      lat: pinnedCoords.lat,
+      lng: pinnedCoords.lng,
     });
     setCreatedTicket(ticket);
     setSubmitting(false);
@@ -294,7 +406,14 @@ export function ReportDrawer({
                   id="report-locality"
                   className="select"
                   value={localityId}
-                  onChange={(e) => setLocalityId(e.target.value)}
+                  onChange={(e) => {
+                    const nextId = e.target.value;
+                    setLocalityId(nextId);
+                    const nextLoc = MIRA_BHAYANDAR_LOCALITIES.find((l) => l.id === nextId);
+                    if (nextLoc) {
+                      setPinnedCoords({ lat: nextLoc.lat, lng: nextLoc.lng });
+                    }
+                  }}
                 >
                   {MIRA_BHAYANDAR_LOCALITIES.map((loc) => (
                     <option key={loc.id} value={loc.id}>
@@ -302,6 +421,17 @@ export function ReportDrawer({
                     </option>
                   ))}
                 </select>
+
+                {mapsEnabled && (
+                  <ReportPinMapPicker
+                    coords={pinnedCoords}
+                    theme={theme}
+                    onPickCoords={(next) => {
+                      setPinnedCoords(next);
+                      setGpsLocked(true);
+                    }}
+                  />
+                )}
 
                 <div
                   className="mono"
@@ -316,8 +446,9 @@ export function ReportDrawer({
                 >
                   <MapPin size={12} strokeWidth={1.5} aria-hidden="true" />
                   <span>
-                    {gpsLocked ? 'EXIF GPS LOCKED:' : 'PIN:'} {selectedLocality.lat.toFixed(4)}°N,{' '}
-                    {selectedLocality.lng.toFixed(4)}°E
+                    {gpsLocked ? 'EXIF GPS LOCKED:' : 'PIN:'} {pinnedCoords.lat.toFixed(4)}°N,{' '}
+                    {pinnedCoords.lng.toFixed(4)}°E
+                    {mapsEnabled ? ' (click map to refine)' : ''}
                     {selectedLocality.nearCriticalZone ? ' · 1.25x Critical Zone' : ''}
                   </span>
                 </div>
@@ -420,19 +551,49 @@ export function ReportDrawer({
               </div>
 
               <div className="field-group">
-                <label htmlFor="report-desc" className="field-label">
-                  5. FIELD OBSERVATION &amp; SEVERITY *
-                </label>
+                <div className="report-voice-row">
+                  <label htmlFor="report-desc" className="field-label">
+                    5. FIELD OBSERVATION &amp; SEVERITY *
+                  </label>
+                  <button
+                    type="button"
+                    className={`btn btn--ghost btn--sm voice-dictate-btn ${voice.isRecording ? 'is-recording' : ''}`}
+                    onClick={voice.toggleRecording}
+                    disabled={voice.isTranscribing}
+                  >
+                    {voice.isTranscribing ? (
+                      <>
+                        <Loader2 size={13} className="spin-icon" aria-hidden="true" />
+                        <span>Transcribing...</span>
+                      </>
+                    ) : voice.isRecording ? (
+                      <>
+                        <Square size={12} strokeWidth={2} aria-hidden="true" />
+                        <span>Stop Voice Note</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mic size={13} strokeWidth={1.7} aria-hidden="true" />
+                        <span>Dictate Issue</span>
+                      </>
+                    )}
+                  </button>
+                </div>
                 <textarea
                   id="report-desc"
                   className="textarea"
-                  placeholder="Describe approximate size, depth, or duration (e.g. overflowing for 36 hours blocking school bus gate)."
+                  placeholder="Describe approximate size, depth, or duration (or tap Dictate Issue to speak in English, Marathi, or Hindi)."
                   value={description}
                   aria-invalid={Boolean(descError)}
                   aria-describedby={descError ? 'report-desc-error' : undefined}
                   onBlur={() => setTouched((prev) => ({ ...prev, description: true }))}
                   onChange={(e) => setDescription(e.target.value)}
                 />
+                {voice.error && (
+                  <span className="field-error" role="alert">
+                    {voice.error}
+                  </span>
+                )}
                 {descError && (
                   <span id="report-desc-error" className="field-error" role="alert">
                     {descError}

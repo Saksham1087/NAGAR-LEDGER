@@ -4,7 +4,10 @@
   <path d="M120 0V630M360 0V630M600 0V630M840 0V630M1080 0V630" stroke="#DCD7CE" stroke-width="1"/>
   <rect x="80" y="76" width="1040" height="478" fill="#FFFFFF" stroke="#141618" stroke-width="2"/>
   <rect x="80" y="76" width="1040" height="64" fill="#141618"/>
-  <text x="116" y="117" fill="#FAF8F4" font-family="monospace" font-size="22" font-weight="600" letter-spacing="2">NAGAR-LEDGER · MIRA-BHAYANDAR WARDS 1–24</text>
+  <rect x="116" y="90" width="36" height="36" rx="2" fill="#1F2327" stroke="#FAF8F4" stroke-opacity="0.28" stroke-width="1.2"/>
+  <path d="M124 118V98L132 118V98" stroke="#FAF8F4" stroke-width="2.6" stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M144 98H137V108H144V118H136.5" stroke="#C8321A" stroke-width="2.6" stroke-linecap="square" stroke-linejoin="miter"/>
+  <text x="166" y="116" fill="#FAF8F4" font-family="monospace" font-size="21" font-weight="600" letter-spacing="2">NAGRIKSEVA · MIRA-BHAYANDAR WARDS 1–24</text>
   <rect x="930" y="94" width="154" height="28" fill="#C8321A"/>
   <text x="947" y="114" fill="#FFFFFF" font-family="monospace" font-size="14" font-weight="600">PUBLIC SLA LOG</text>
   <text x="116" y="238" fill="#141618" font-family="sans-serif" font-size="54" font-weight="700">Every pothole, pipe leak,</text>

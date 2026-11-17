@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, MessageSquareText, X } from 'lucide-react';
 import type { TranslationBundle } from '../data/translations';
+import { withBasePath } from '../utils/routeUtils';
+import { BrandLogo } from './BrandLogo';
 
 interface HeaderProps {
   t: TranslationBundle;
@@ -8,6 +10,7 @@ interface HeaderProps {
   scrollProgress: number;
   onNavigate: (path: string, anchorId?: string) => void;
   onOpenReport: () => void;
+  onOpenCopilot: () => void;
 }
 
 export function Header({
@@ -16,6 +19,7 @@ export function Header({
   scrollProgress,
   onNavigate,
   onOpenReport,
+  onOpenCopilot,
 }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -46,21 +50,23 @@ export function Header({
     onNavigate(path, anchor);
   };
 
+  const baseUrl = import.meta.env.BASE_URL;
+
   return (
     <>
       <header className="site-header">
         <div className="container site-header__inner">
           <a
-            href="/"
+            href={withBasePath('/', baseUrl)}
             className="brand-wordmark"
             onClick={(e) => handleLinkClick(e, '/')}
           >
-            NAGAR-LEDGER
+            <BrandLogo size={30} showSubtag />
           </a>
 
           <nav className="primary-nav" aria-label="Primary navigation">
             <a
-              href="/#live-ledger"
+              href={withBasePath('/#live-ledger', baseUrl)}
               className={`nav-link ${currentPath === '/' ? 'is-active' : ''}`}
               aria-current={currentPath === '/' ? 'page' : undefined}
               onClick={(e) => handleLinkClick(e, '/', 'live-ledger')}
@@ -68,14 +74,14 @@ export function Header({
               {t.nav.ledger}
             </a>
             <a
-              href="/#priority-engine"
+              href={withBasePath('/#priority-engine', baseUrl)}
               className="nav-link"
               onClick={(e) => handleLinkClick(e, '/', 'priority-engine')}
             >
               {t.nav.priority}
             </a>
             <a
-              href="/wards"
+              href={withBasePath('/wards', baseUrl)}
               className={`nav-link ${currentPath === '/wards' ? 'is-active' : ''}`}
               aria-current={currentPath === '/wards' ? 'page' : undefined}
               onClick={(e) => handleLinkClick(e, '/wards', 'ward-scorecard')}
@@ -83,7 +89,7 @@ export function Header({
               {t.nav.wards}
             </a>
             <a
-              href="/#citizen-audit"
+              href={withBasePath('/#citizen-audit', baseUrl)}
               className="nav-link"
               onClick={(e) => handleLinkClick(e, '/', 'citizen-audit')}
             >
@@ -92,6 +98,15 @@ export function Header({
           </nav>
 
           <div className="header-actions">
+            <button
+              type="button"
+              className="btn btn--secondary btn--sm header-copilot-btn"
+              onClick={onOpenCopilot}
+            >
+              <MessageSquareText size={14} strokeWidth={1.6} aria-hidden="true" />
+              <span>{t.nav.copilotCta}</span>
+            </button>
+
             <button
               type="button"
               className="btn btn--primary btn--sm header-cta"
@@ -147,7 +162,9 @@ export function Header({
                   marginBottom: '1.25rem',
                 }}
               >
-                <span className="brand-wordmark">NAGAR-LEDGER</span>
+                <span className="brand-wordmark">
+                  <BrandLogo size={28} />
+                </span>
                 <button
                   ref={closeBtnRef}
                   type="button"
@@ -164,7 +181,7 @@ export function Header({
 
               <nav className="mobile-nav-links" aria-label="Mobile links">
                 <a
-                  href="/#live-ledger"
+                  href={withBasePath('/#live-ledger', baseUrl)}
                   className="mobile-nav-link"
                   onClick={(e) => handleLinkClick(e, '/', 'live-ledger')}
                 >
@@ -174,7 +191,7 @@ export function Header({
                   </span>
                 </a>
                 <a
-                  href="/#priority-engine"
+                  href={withBasePath('/#priority-engine', baseUrl)}
                   className="mobile-nav-link"
                   onClick={(e) => handleLinkClick(e, '/', 'priority-engine')}
                 >
@@ -184,7 +201,7 @@ export function Header({
                   </span>
                 </a>
                 <a
-                  href="/#citizen-audit"
+                  href={withBasePath('/#citizen-audit', baseUrl)}
                   className="mobile-nav-link"
                   onClick={(e) => handleLinkClick(e, '/', 'citizen-audit')}
                 >
@@ -194,7 +211,7 @@ export function Header({
                   </span>
                 </a>
                 <a
-                  href="/wards"
+                  href={withBasePath('/wards', baseUrl)}
                   className="mobile-nav-link"
                   onClick={(e) => handleLinkClick(e, '/wards', 'ward-scorecard')}
                 >
@@ -206,17 +223,32 @@ export function Header({
               </nav>
             </div>
 
-            <button
-              type="button"
-              className="btn btn--primary"
-              style={{ width: '100%' }}
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenReport();
-              }}
-            >
-              {t.nav.reportCta}
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              <button
+                type="button"
+                className="btn btn--secondary"
+                style={{ width: '100%' }}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenCopilot();
+                }}
+              >
+                <MessageSquareText size={16} strokeWidth={1.6} aria-hidden="true" />
+                <span>{t.nav.copilotCta}</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn btn--primary"
+                style={{ width: '100%' }}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenReport();
+                }}
+              >
+                {t.nav.reportCta}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -81,6 +81,23 @@ export interface CivicTicket {
   afterImageTag?: string;
   citizenVerifyCount?: number;
   citizenReopenCount?: number;
+  authorUid?: string;
+}
+
+export type CopilotMode = 'search' | 'fast' | 'deep';
+
+export interface GroundingSource {
+  title: string;
+  uri: string;
+}
+
+export interface CopilotMessage {
+  id: string;
+  role: 'user' | 'model';
+  text: string;
+  modelUsed?: string;
+  groundingSources?: GroundingSource[];
+  createdAtMs: number;
 }
 
 export interface CpsInputs {

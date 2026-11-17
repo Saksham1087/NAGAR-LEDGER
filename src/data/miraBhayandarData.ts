@@ -801,7 +801,7 @@ export const INITIAL_AUDIT_CASES: CitizenAuditCase[] = [
 export const FAQ_ITEMS = [
   {
     q: 'Do I need to reveal my name or create an account to log an overflowing bin or pipe leak?',
-    a: 'No. NAGAR-LEDGER accepts anonymous civic reports in under 30 seconds. An optional 10-digit mobile number is only used if you want SMS status alerts when the ward crew uploads the post-repair photo.',
+    a: 'No. NagrikSeva accepts anonymous civic reports in under 30 seconds. An optional 10-digit mobile number is only used if you want SMS status alerts when the ward crew uploads the post-repair photo.',
   },
   {
     q: 'How does the 50-meter duplicate clustering prevent multiple tickets for the same pothole?',

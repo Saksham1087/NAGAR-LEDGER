@@ -1,0 +1,367 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core security primitives
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Entity validation blueprints (never call existing() or diff() inside helpers)
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+          'uid',
+          'displayName',
+          'email',
+          'preferredLanguage',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid',
+          'displayName',
+          'email',
+          'photoURL',
+          'preferredLanguage',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.uid)
+        && data.uid == request.auth.uid
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 120
+        && data.email is string
+        && data.email.size() >= 3
+        && data.email.size() <= 254
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 512))
+        && data.preferredLanguage in ['en', 'mr', 'hi']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCivicTicket(data) {
+      return data.keys().hasAll([
+          'id',
+          'authorUid',
+          'title',
+          'description',
+          'category',
+          'localityId',
+          'localityName',
+          'wardNumber',
+          'prabhag',
+          'streetAddress',
+          'lat',
+          'lng',
+          'mapX',
+          'mapY',
+          'status',
+          'createdAtMs',
+          'slaHours',
+          'inspectionWindowHours',
+          'nearCriticalZone',
+          'confirmations',
+          'duplicatesMerged',
+          'assignedOfficer',
+          'escalationOfficer',
+          'auditTrail',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id',
+          'authorUid',
+          'title',
+          'description',
+          'category',
+          'localityId',
+          'localityName',
+          'wardNumber',
+          'prabhag',
+          'streetAddress',
+          'lat',
+          'lng',
+          'mapX',
+          'mapY',
+          'status',
+          'createdAtMs',
+          'slaHours',
+          'inspectionWindowHours',
+          'nearCriticalZone',
+          'criticalZoneNote',
+          'confirmations',
+          'duplicatesMerged',
+          'assignedOfficer',
+          'escalationOfficer',
+          'auditTrail',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.authorUid)
+        && data.authorUid == request.auth.uid
+        && data.title is string
+        && data.title.size() >= 8
+        && data.title.size() <= 180
+        && data.description is string
+        && data.description.size() >= 12
+        && data.description.size() <= 2000
+        && data.category in ['water', 'drainage', 'garbage', 'road', 'streetlight']
+        && isValidId(data.localityId)
+        && data.localityName is string
+        && data.localityName.size() >= 2
+        && data.localityName.size() <= 120
+        && data.wardNumber is int
+        && data.wardNumber >= 1
+        && data.wardNumber <= 24
+        && data.prabhag in [
+          'Mira Road East',
+          'Kashimira',
+          'Bhayandar West',
+          'Bhayandar East',
+          'Navghar',
+          'Uttan'
+        ]
+        && data.streetAddress is string
+        && data.streetAddress.size() >= 2
+        && data.streetAddress.size() <= 240
+        && data.lat is number
+        && data.lng is number
+        && data.mapX is number
+        && data.mapY is number
+        && data.status in ['open', 'sla_risk', 'escalated', 'awaiting_audit', 'verified']
+        && data.createdAtMs is number
+        && data.slaHours is number
+        && data.inspectionWindowHours is number
+        && data.nearCriticalZone is bool
+        && (!('criticalZoneNote' in data) || (data.criticalZoneNote is string && data.criticalZoneNote.size() <= 160))
+        && data.confirmations is int
+        && data.confirmations >= 1
+        && data.duplicatesMerged is int
+        && data.duplicatesMerged >= 0
+        && data.assignedOfficer is string
+        && data.assignedOfficer.size() >= 2
+        && data.assignedOfficer.size() <= 140
+        && data.escalationOfficer is string
+        && data.escalationOfficer.size() >= 2
+        && data.escalationOfficer.size() <= 140
+        && data.auditTrail is list
+        && data.auditTrail.size() >= 1
+        && data.auditTrail.size() <= 10
+        && data.auditTrail[0] is map
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidChatSession(data) {
+      return data.keys().hasAll(['id', 'ownerUid', 'title', 'mode', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerUid', 'title', 'mode', 'createdAt', 'updatedAt'])
+        && isValidId(data.id)
+        && isValidId(data.ownerUid)
+        && data.ownerUid == request.auth.uid
+        && data.title is string
+        && data.title.size() >= 1
+        && data.title.size() <= 120
+        && data.mode in ['search', 'fast', 'deep']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidChatMessage(data) {
+      return data.keys().hasAll(['id', 'sessionId', 'ownerUid', 'role', 'text', 'createdAt'])
+        && data.keys().hasOnly([
+          'id',
+          'sessionId',
+          'ownerUid',
+          'role',
+          'text',
+          'modelUsed',
+          'groundingSources',
+          'createdAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.sessionId)
+        && isValidId(data.ownerUid)
+        && data.ownerUid == request.auth.uid
+        && data.role in ['user', 'model']
+        && data.text is string
+        && data.text.size() >= 1
+        && data.text.size() <= 8000
+        && (!('modelUsed' in data) || (data.modelUsed is string && data.modelUsed.size() <= 64))
+        && (!('groundingSources' in data) || (
+          data.groundingSources is list
+          && data.groundingSources.size() <= 10
+          && (data.groundingSources.size() == 0 || data.groundingSources[0] is map)
+        ))
+        && data.createdAt is timestamp;
+    }
+
+    function isValidAuditVote(data) {
+      return data.keys().hasAll(['id', 'userId', 'ticketId', 'vote', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'userId', 'ticketId', 'vote', 'createdAt', 'updatedAt'])
+        && isValidId(data.id)
+        && isValidId(data.userId)
+        && data.userId == request.auth.uid
+        && isValidId(data.ticketId)
+        && data.vote in ['verify', 'reopen']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 1. User profiles (PII isolated strictly to owner)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == userId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName',
+          'email',
+          'photoURL',
+          'preferredLanguage',
+          'updatedAt'
+        ]);
+      allow delete: if false;
+    }
+
+    // 2. Citizen-logged civic tickets
+    match /tickets/{ticketId} {
+      allow get: if isValidId(ticketId)
+        && isSignedIn()
+        && resource.data.authorUid == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+      allow create: if isValidId(ticketId)
+        && isSignedIn()
+        && isValidCivicTicket(incoming())
+        && incoming().id == ticketId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(ticketId)
+        && isSignedIn()
+        && existing().authorUid == request.auth.uid
+        && existing().status != 'verified'
+        && isValidCivicTicket(incoming())
+        && incoming().id == existing().id
+        && incoming().authorUid == existing().authorUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          (incoming().diff(existing()).affectedKeys().hasOnly(['confirmations', 'duplicatesMerged', 'updatedAt'])
+            && incoming().confirmations >= existing().confirmations
+            && incoming().duplicatesMerged >= existing().duplicatesMerged)
+          || incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+        );
+      allow delete: if isValidId(ticketId)
+        && isSignedIn()
+        && existing().authorUid == request.auth.uid;
+    }
+
+    // 3. Multi-turn Gemini Civic Copilot chat sessions & Master-Gated message subcollections
+    match /chatSessions/{sessionId} {
+      allow get: if isValidId(sessionId)
+        && isSignedIn()
+        && resource.data.ownerUid == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+      allow create: if isValidId(sessionId)
+        && isSignedIn()
+        && isValidChatSession(incoming())
+        && incoming().id == sessionId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(sessionId)
+        && isSignedIn()
+        && existing().ownerUid == request.auth.uid
+        && isValidChatSession(incoming())
+        && incoming().id == existing().id
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'mode', 'updatedAt']);
+      allow delete: if isValidId(sessionId)
+        && isSignedIn()
+        && existing().ownerUid == request.auth.uid;
+
+      match /messages/{messageId} {
+        allow get: if isValidId(sessionId)
+          && isValidId(messageId)
+          && isSignedIn()
+          && exists(/databases/$(database)/documents/chatSessions/$(sessionId))
+          && get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.ownerUid == request.auth.uid;
+        allow list: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+        allow create: if isValidId(sessionId)
+          && isValidId(messageId)
+          && isSignedIn()
+          && isValidChatMessage(incoming())
+          && incoming().id == messageId
+          && incoming().sessionId == sessionId
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/chatSessions/$(sessionId))
+          && get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.ownerUid == request.auth.uid;
+        allow update: if false;
+        allow delete: if isValidId(sessionId)
+          && isValidId(messageId)
+          && isSignedIn()
+          && existing().ownerUid == request.auth.uid;
+      }
+    }
+
+    // 4. Citizen Proof-of-Fix verification votes
+    match /auditVotes/{voteId} {
+      allow get: if isValidId(voteId)
+        && isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isValidId(voteId)
+        && isSignedIn()
+        && isValidAuditVote(incoming())
+        && incoming().id == voteId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(voteId)
+        && isSignedIn()
+        && existing().userId == request.auth.uid
+        && isValidAuditVote(incoming())
+        && incoming().id == existing().id
+        && incoming().userId == existing().userId
+        && incoming().ticketId == existing().ticketId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['vote', 'updatedAt']);
+      allow delete: if isValidId(voteId)
+        && isSignedIn()
+        && existing().userId == request.auth.uid;
+    }
+  }
+}

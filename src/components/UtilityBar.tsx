@@ -1,4 +1,5 @@
-import { Moon, Sun } from 'lucide-react';
+import type { User } from 'firebase/auth';
+import { LogIn, LogOut, Moon, ShieldCheck, Sun } from 'lucide-react';
 import type { LanguageCode, ThemeMode } from '../types/civic';
 
 interface UtilityBarProps {
@@ -7,6 +8,11 @@ interface UtilityBarProps {
   theme: ThemeMode;
   onToggleTheme: () => void;
   nowMs: number;
+  user: User | null;
+  authReady: boolean;
+  signingIn: boolean;
+  onSignInWithGoogle: () => void;
+  onSignOut: () => void;
 }
 
 export function UtilityBar({
@@ -15,6 +21,11 @@ export function UtilityBar({
   theme,
   onToggleTheme,
   nowMs,
+  user,
+  authReady,
+  signingIn,
+  onSignInWithGoogle,
+  onSignOut,
 }: UtilityBarProps) {
   const istTime = new Intl.DateTimeFormat('en-IN', {
     hour: '2-digit',
@@ -24,8 +35,12 @@ export function UtilityBar({
     timeZone: 'Asia/Kolkata',
   }).format(new Date(nowMs));
 
+  const displayName = user
+    ? (user.displayName || user.email?.split('@')[0] || 'Citizen').slice(0, 20)
+    : '';
+
   return (
-    <div className="utility-bar" role="region" aria-label="Display and language controls">
+    <div className="utility-bar" role="region" aria-label="Display, account, and language controls">
       <div className="container utility-bar__inner">
         <div className="utility-bar__meta">
           <span>MBMC PUBLIC WORKS</span>
@@ -36,6 +51,34 @@ export function UtilityBar({
         </div>
 
         <div className="utility-bar__controls">
+          {authReady && (
+            user ? (
+              <div className="auth-user-chip" title={user.email ?? 'Signed-in Citizen'}>
+                <ShieldCheck size={13} strokeWidth={1.7} aria-hidden="true" />
+                <span className="auth-user-chip__name">{displayName}</span>
+                <button
+                  type="button"
+                  className="auth-user-chip__signout"
+                  onClick={onSignOut}
+                  aria-label="Sign out of Google account"
+                >
+                  <LogOut size={12} strokeWidth={1.7} aria-hidden="true" />
+                  <span>Sign out</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="auth-pill-btn"
+                onClick={onSignInWithGoogle}
+                disabled={signingIn}
+              >
+                <LogIn size={13} strokeWidth={1.7} aria-hidden="true" />
+                <span>{signingIn ? 'Signing in...' : 'Sign in with Google'}</span>
+              </button>
+            )
+          )}
+
           <div className="segmented-control" role="group" aria-label="Interface language">
             <button
               type="button"

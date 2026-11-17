@@ -7,6 +7,7 @@ export interface TranslationBundle {
     wards: string;
     audit: string;
     reportCta: string;
+    copilotCta: string;
   };
   hero: {
     kicker: string;
@@ -34,6 +35,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationBundle> = {
       wards: 'Ward Scorecard',
       audit: 'Citizen Audit',
       reportCta: 'Log Civic Issue',
+      copilotCta: 'Civic Copilot',
     },
     hero: {
       kicker: 'MIRA-BHAYANDAR MUNICIPAL LEDGER · WARDS 1–24',
@@ -72,6 +74,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationBundle> = {
       wards: 'प्रभाग कामगिरी',
       audit: 'नागरिक पडताळणी',
       reportCta: 'तक्रार नोंदवा',
+      copilotCta: 'नागरी सहचर',
     },
     hero: {
       kicker: 'मीरा-भाईंदर महानगरपालिका नोंदवही · प्रभाग १–२४',
@@ -110,6 +113,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationBundle> = {
       wards: 'वार्ड स्कोरकार्ड',
       audit: 'नागरिक ऑडिट',
       reportCta: 'शिकायत दर्ज करें',
+      copilotCta: 'नागरिक कोपायलट',
     },
     hero: {
       kicker: 'मीरा-भायंदर नगर पालिका रजिस्टर · वार्ड 1–24',

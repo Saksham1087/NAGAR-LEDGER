@@ -1,6 +1,8 @@
 import { ArrowUp, Download } from 'lucide-react';
 import { MBMC_HELPLINES } from '../data/miraBhayandarData';
 import type { TranslationBundle } from '../data/translations';
+import { withBasePath } from '../utils/routeUtils';
+import { BrandLogo } from './BrandLogo';
 
 interface FooterProps {
   t: TranslationBundle;
@@ -9,6 +11,7 @@ interface FooterProps {
 }
 
 export function Footer({ t, onNavigate, onExportAllJson }: FooterProps) {
+  const baseUrl = import.meta.env.BASE_URL;
   const scrollToTop = () => {
     window.scrollTo({ top: 0 });
   };
@@ -18,7 +21,9 @@ export function Footer({ t, onNavigate, onExportAllJson }: FooterProps) {
       <div className="container">
         <div className="footer-grid">
           <div>
-            <div className="brand-wordmark">NAGAR-LEDGER</div>
+            <div className="brand-wordmark">
+              <BrandLogo size={30} showSubtag />
+            </div>
             <p
               style={{
                 fontSize: '0.875rem',
@@ -37,7 +42,7 @@ export function Footer({ t, onNavigate, onExportAllJson }: FooterProps) {
             <ul className="footer-links">
               <li>
                 <a
-                  href="/#live-ledger"
+                  href={withBasePath('/#live-ledger', baseUrl)}
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate('/', 'live-ledger');
@@ -48,7 +53,7 @@ export function Footer({ t, onNavigate, onExportAllJson }: FooterProps) {
               </li>
               <li>
                 <a
-                  href="/#priority-engine"
+                  href={withBasePath('/#priority-engine', baseUrl)}
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate('/', 'priority-engine');
@@ -59,7 +64,7 @@ export function Footer({ t, onNavigate, onExportAllJson }: FooterProps) {
               </li>
               <li>
                 <a
-                  href="/wards"
+                  href={withBasePath('/wards', baseUrl)}
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate('/wards', 'ward-scorecard');
@@ -70,7 +75,7 @@ export function Footer({ t, onNavigate, onExportAllJson }: FooterProps) {
               </li>
               <li>
                 <a
-                  href="/#citizen-audit"
+                  href={withBasePath('/#citizen-audit', baseUrl)}
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate('/', 'citizen-audit');
@@ -109,7 +114,16 @@ export function Footer({ t, onNavigate, onExportAllJson }: FooterProps) {
               </button>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                 WCAG 2.2 AA accessible · Zero-tracker prototype persisting locally in browser
-                storage.
+                storage. Mapping subject to{' '}
+                <a
+                  href="https://maps.google.com/help/terms_maps/?utm_campaign=gmp_mcp_codeassist_v1_aistudio"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                >
+                  Google Maps End User Terms
+                </a>
+                .
               </p>
             </div>
           </div>
@@ -117,7 +131,7 @@ export function Footer({ t, onNavigate, onExportAllJson }: FooterProps) {
 
         <div className="footer-bottom">
           <span>
-            NAGAR-LEDGER · Mira-Bhayandar Wards 1–24 Civic Works Prototype · Maharashtra
+            NagrikSeva · Mira-Bhayandar Wards 1–24 Civic Works Prototype · Maharashtra
           </span>
           <button
             type="button"

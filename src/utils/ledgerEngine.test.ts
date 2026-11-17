@@ -126,7 +126,29 @@ test('computeLedgerTelemetry counts open, resolved, escalated, and merged duplic
   assert.equal(stats.mergedDuplicates, 6);
 });
 
+import { stripBasePath, withBasePath } from './routeUtils';
+
 test('generateTicketId increments sequence cleanly', () => {
   const nextId = generateTicketId([makeTicket({ id: 'MBMC-2026-0842' }), makeTicket({ id: 'MBMC-2026-0854' })]);
   assert.equal(nextId, 'MBMC-2026-0855');
 });
+
+test('stripBasePath and withBasePath handle root and GitHub Pages subpaths', () => {
+  assert.equal(stripBasePath('/', '/'), '/');
+  assert.equal(stripBasePath('/wards/', '/'), '/wards');
+  assert.equal(stripBasePath('/NAGAR-LEDGER/', '/NAGAR-LEDGER/'), '/');
+  assert.equal(stripBasePath('/NAGAR-LEDGER', '/NAGAR-LEDGER/'), '/');
+  assert.equal(stripBasePath('/NAGAR-LEDGER/wards', '/NAGAR-LEDGER/'), '/wards');
+  assert.equal(
+    stripBasePath('/NAGAR-LEDGER/ticket/MBMC-2026-0842', '/NAGAR-LEDGER/'),
+    '/ticket/MBMC-2026-0842'
+  );
+  assert.equal(stripBasePath('/NAGAR-LEDGER/nonexistent', '/NAGAR-LEDGER/'), '/nonexistent');
+
+  assert.equal(withBasePath('/', '/'), '/');
+  assert.equal(withBasePath('/wards', '/'), '/wards');
+  assert.equal(withBasePath('/', '/NAGAR-LEDGER/'), '/NAGAR-LEDGER/');
+  assert.equal(withBasePath('/wards', '/NAGAR-LEDGER/'), '/NAGAR-LEDGER/wards');
+  assert.equal(withBasePath('/#live-ledger', '/NAGAR-LEDGER/'), '/NAGAR-LEDGER/#live-ledger');
+});
+

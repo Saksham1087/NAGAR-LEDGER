@@ -1,0 +1,399 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated citizen account profile scoped strictly to the signed-in owner.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID matching the document ID."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Citizen display name from Google Sign-In."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 3,
+          "maxLength": 254,
+          "description": "Verified Google account email address (PII, owner-only)."
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Optional avatar URL from Google Sign-In."
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "enum": ["en", "mr", "hi"],
+          "maxLength": 8,
+          "description": "Preferred UI language code."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-validated creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-validated update timestamp."
+        }
+      },
+      "required": ["uid", "displayName", "email", "preferredLanguage", "createdAt", "updatedAt"]
+    },
+    "CivicTicketRecord": {
+      "title": "CivicTicketRecord",
+      "description": "Citizen-logged Mira-Bhayandar civic issue persisted in Firestore for cross-session SLA tracking.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Public tracking ticket ID (e.g. MBMC-2026-0854)."
+        },
+        "authorUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the citizen who logged this ticket."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 180,
+          "description": "Short issue headline."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 2000,
+          "description": "Field observation and hazard severity details."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["water", "drainage", "garbage", "road", "streetlight"],
+          "maxLength": 32,
+          "description": "Civic issue category determining statutory SLA hours."
+        },
+        "localityId": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Mira-Bhayandar locality identifier."
+        },
+        "localityName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120,
+          "description": "Human-readable locality name."
+        },
+        "wardNumber": {
+          "type": "integer",
+          "description": "Municipal ward number (1-24)."
+        },
+        "prabhag": {
+          "type": "string",
+          "enum": [
+            "Mira Road East",
+            "Kashimira",
+            "Bhayandar West",
+            "Bhayandar East",
+            "Navghar",
+            "Uttan"
+          ],
+          "maxLength": 48,
+          "description": "Mira-Bhayandar Prabhag zone name."
+        },
+        "streetAddress": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 240,
+          "description": "Landmark or cross-street details."
+        },
+        "lat": {
+          "type": "number",
+          "description": "Latitude coordinate inside Mira-Bhayandar."
+        },
+        "lng": {
+          "type": "number",
+          "description": "Longitude coordinate inside Mira-Bhayandar."
+        },
+        "mapX": {
+          "type": "number",
+          "description": "Projected X coordinate for SVG vector fallback map."
+        },
+        "mapY": {
+          "type": "number",
+          "description": "Projected Y coordinate for SVG vector fallback map."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["open", "sla_risk", "escalated", "awaiting_audit", "verified"],
+          "maxLength": 32,
+          "description": "Current SLA lifecycle status."
+        },
+        "createdAtMs": {
+          "type": "number",
+          "description": "Client epoch ms at ticket submission for countdown display."
+        },
+        "slaHours": {
+          "type": "number",
+          "description": "Statutory SLA duration in hours."
+        },
+        "inspectionWindowHours": {
+          "type": "number",
+          "description": "Initial field inspection window in hours."
+        },
+        "nearCriticalZone": {
+          "type": "boolean",
+          "description": "Whether location is within 200m of school, hospital, station, or nullah."
+        },
+        "criticalZoneNote": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Optional label for nearby critical civic zone."
+        },
+        "confirmations": {
+          "type": "integer",
+          "description": "Citizen confirmation count."
+        },
+        "duplicatesMerged": {
+          "type": "integer",
+          "description": "Merged duplicate count within 50m radius."
+        },
+        "assignedOfficer": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 140,
+          "description": "Assigned MBMC ward officer label."
+        },
+        "escalationOfficer": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 140,
+          "description": "DMC escalation authority label."
+        },
+        "auditTrail": {
+          "type": "array",
+          "description": "Bounded workflow stage entries (up to 10 items)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp verified at creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp verified on every write."
+        }
+      },
+      "required": [
+        "id",
+        "authorUid",
+        "title",
+        "description",
+        "category",
+        "localityId",
+        "localityName",
+        "wardNumber",
+        "prabhag",
+        "streetAddress",
+        "lat",
+        "lng",
+        "mapX",
+        "mapY",
+        "status",
+        "createdAtMs",
+        "slaHours",
+        "inspectionWindowHours",
+        "nearCriticalZone",
+        "confirmations",
+        "duplicatesMerged",
+        "assignedOfficer",
+        "escalationOfficer",
+        "auditTrail",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ChatSession": {
+      "title": "ChatSession",
+      "description": "Parent multi-turn Gemini Civic Copilot conversation owned by a citizen.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Chat session identifier."
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the conversation owner."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Short conversation title."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["search", "fast", "deep"],
+          "maxLength": 16,
+          "description": "Active assistant mode."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-verified creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-verified update timestamp."
+        }
+      },
+      "required": ["id", "ownerUid", "title", "mode", "createdAt", "updatedAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Individual message within a ChatSession subcollection.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Message identifier."
+        },
+        "sessionId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Parent ChatSession ID."
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the owning citizen."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"],
+          "maxLength": 16,
+          "description": "Message speaker role."
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000,
+          "description": "Message body text."
+        },
+        "modelUsed": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Optional Gemini model name that generated the response."
+        },
+        "groundingSources": {
+          "type": "array",
+          "description": "Bounded web grounding source entries (max 10)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-verified message timestamp."
+        }
+      },
+      "required": ["id", "sessionId", "ownerUid", "role", "text", "createdAt"]
+    },
+    "CitizenAuditVote": {
+      "title": "CitizenAuditVote",
+      "description": "Citizen Proof-of-Fix verification or re-open vote persisted per user and case.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Deterministic vote key combining ticketId and userId."
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Authenticated voter UID."
+        },
+        "ticketId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Associated civic ticket ID."
+        },
+        "vote": {
+          "type": "string",
+          "enum": ["verify", "reopen"],
+          "maxLength": 16,
+          "description": "Citizen audit verdict."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-verified creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-verified update timestamp."
+        }
+      },
+      "required": ["id", "userId", "ticketId", "vote", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private owner-only citizen profile document storing Google Sign-In display info and language preference."
+    },
+    "/tickets/{ticketId}": {
+      "schema": { "$ref": "#/entities/CivicTicketRecord" },
+      "description": "Civic tickets created and updated by signed-in citizens, synced per owner across sessions."
+    },
+    "/chatSessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/ChatSession" },
+      "description": "Multi-turn NagrikSeva Civic Copilot session metadata per user."
+    },
+    "/chatSessions/{sessionId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Ordered conversation messages nested under each ChatSession."
+    },
+    "/auditVotes/{voteId}": {
+      "schema": { "$ref": "#/entities/CitizenAuditVote" },
+      "description": "Citizen Proof-of-Fix verification and re-open votes keyed by user and ticket."
+    }
+  }
+}

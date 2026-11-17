@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { APIProvider } from '@vis.gl/react-google-maps';
 import { X } from 'lucide-react';
 import { CitizenAuditSection } from './components/CitizenAuditSection';
+import { CivicCopilotDrawer } from './components/CivicCopilotDrawer';
 import { FaqAndCtaSection } from './components/FaqAndCtaSection';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
@@ -13,39 +15,76 @@ import { TicketInspectorModal } from './components/TicketInspectorModal';
 import { UtilityBar } from './components/UtilityBar';
 import { WardScorecardSection } from './components/WardScorecardSection';
 import { TRANSLATIONS } from './data/translations';
+import { useAuth } from './hooks/useAuth';
 import { useLedgerStore } from './hooks/useLedgerStore';
 import { evaluateTicketSla, getTicketCps } from './utils/ledgerEngine';
+import { stripBasePath, withBasePath } from './utils/routeUtils';
 
-function normalizePath(pathname: string): string {
-  if (pathname.length > 1 && pathname.endsWith('/')) {
-    return pathname.slice(0, -1);
+const BASE_URL = import.meta.env.BASE_URL || '/';
+const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() || '';
+
+function MapsShell({
+  apiKey,
+  language,
+  children,
+}: {
+  apiKey: string;
+  language: string;
+  children: ReactNode;
+}) {
+  if (!apiKey) {
+    return <>{children}</>;
   }
-  return pathname || '/';
+
+  return (
+    <APIProvider
+      apiKey={apiKey}
+      libraries={['marker']}
+      region="IN"
+      language={language}
+    >
+      {children}
+    </APIProvider>
+  );
 }
 
 export function App() {
-  const store = useLedgerStore();
+  const authState = useAuth();
+  const store = useLedgerStore({
+    uid: authState.user?.uid ?? null,
+    emailVerified: authState.user?.emailVerified ?? false,
+    authReady: authState.authReady,
+  });
   const t = TRANSLATIONS[store.language];
 
+  const [mapsQuotaExceeded, setMapsQuotaExceeded] = useState<boolean>(false);
+
   const [pathname, setPathname] = useState<string>(() =>
-    normalizePath(window.location.pathname)
+    stripBasePath(window.location.pathname, BASE_URL)
   );
   const [reportOpen, setReportOpen] = useState<boolean>(
-    () => normalizePath(window.location.pathname) === '/report'
+    () => stripBasePath(window.location.pathname, BASE_URL) === '/report'
   );
+  const [copilotOpen, setCopilotOpen] = useState<boolean>(false);
   const [reportInitialLocality, setReportInitialLocality] = useState<string | undefined>(
     undefined
   );
   const [inspectedTicketId, setInspectedTicketId] = useState<string | null>(() => {
-    const match = normalizePath(window.location.pathname).match(/^\/ticket\/([^/]+)$/);
+    const match = stripBasePath(window.location.pathname, BASE_URL).match(/^\/ticket\/([^/]+)$/);
     return match ? decodeURIComponent(match[1]) : null;
   });
   const [scrollProgress, setScrollProgress] = useState<number>(0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    const handleQuotaExceeded = () => setMapsQuotaExceeded(true);
+    window.addEventListener('gmp-quota-exceeded', handleQuotaExceeded);
+    return () => window.removeEventListener('gmp-quota-exceeded', handleQuotaExceeded);
+  }, []);
+
+  useEffect(() => {
     const onPopState = () => {
-      const next = normalizePath(window.location.pathname);
+      const next = stripBasePath(window.location.pathname, BASE_URL);
       setPathname(next);
       setReportOpen(next === '/report');
       const match = next.match(/^\/ticket\/([^/]+)$/);
@@ -76,10 +115,25 @@ export function App() {
     return () => window.clearTimeout(timer);
   }, [toastMessage]);
 
+  useEffect(() => {
+    if (authState.authError) {
+      setToastMessage(authState.authError);
+      authState.clearAuthError();
+    }
+  }, [authState]);
+
+  useEffect(() => {
+    if (store.syncNotice) {
+      setToastMessage(store.syncNotice);
+      store.clearSyncNotice();
+    }
+  }, [store]);
+
   const navigate = useCallback((nextPath: string, anchorId?: string) => {
-    const clean = normalizePath(nextPath);
-    if (window.location.pathname !== clean) {
-      window.history.pushState({}, '', clean);
+    const clean = stripBasePath(nextPath, BASE_URL);
+    const fullTarget = withBasePath(clean, BASE_URL);
+    if (window.location.pathname !== fullTarget) {
+      window.history.pushState({}, '', fullTarget);
     }
     setPathname(clean);
     setReportOpen(clean === '/report');
@@ -100,16 +154,17 @@ export function App() {
     setReportInitialLocality(preselectedLocalityId);
     setInspectedTicketId(null);
     setReportOpen(true);
-    if (window.location.pathname !== '/report') {
-      window.history.pushState({}, '', '/report');
+    const fullTarget = withBasePath('/report', BASE_URL);
+    if (window.location.pathname !== fullTarget) {
+      window.history.pushState({}, '', fullTarget);
     }
     setPathname('/report');
   }, []);
 
   const closeReport = useCallback(() => {
     setReportOpen(false);
-    if (window.location.pathname === '/report') {
-      window.history.pushState({}, '', '/');
+    if (stripBasePath(window.location.pathname, BASE_URL) === '/report') {
+      window.history.pushState({}, '', withBasePath('/', BASE_URL));
       setPathname('/');
     }
   }, []);
@@ -118,16 +173,17 @@ export function App() {
     setReportOpen(false);
     setInspectedTicketId(ticketId);
     const nextPath = `/ticket/${encodeURIComponent(ticketId)}`;
-    if (window.location.pathname !== nextPath) {
-      window.history.pushState({}, '', nextPath);
+    const fullTarget = withBasePath(nextPath, BASE_URL);
+    if (window.location.pathname !== fullTarget) {
+      window.history.pushState({}, '', fullTarget);
     }
     setPathname(nextPath);
   }, []);
 
   const closeInspector = useCallback(() => {
     setInspectedTicketId(null);
-    if (window.location.pathname.startsWith('/ticket/')) {
-      window.history.pushState({}, '', '/');
+    if (stripBasePath(window.location.pathname, BASE_URL).startsWith('/ticket/')) {
+      window.history.pushState({}, '', withBasePath('/', BASE_URL));
       setPathname('/');
     }
   }, []);
@@ -168,7 +224,7 @@ export function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `mbmc-nagar-ledger-all-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `mbmc-nagrikseva-all-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -190,20 +246,38 @@ export function App() {
 
   useEffect(() => {
     if (pathname === '/wards') {
-      document.title = 'Ward Scorecard — NAGAR-LEDGER Mira-Bhayandar';
+      document.title = 'Ward Scorecard — NagrikSeva Mira-Bhayandar';
     } else if (pathname === '/report') {
-      document.title = 'Log Issue (30s) — NAGAR-LEDGER Mira-Bhayandar';
+      document.title = 'Log Issue (30s) — NagrikSeva Mira-Bhayandar';
     } else if (inspectedTicket) {
-      document.title = `${inspectedTicket.id} — NAGAR-LEDGER Mira-Bhayandar`;
+      document.title = `${inspectedTicket.id} — NagrikSeva Mira-Bhayandar`;
     } else if (!isKnownRoute) {
-      document.title = '404 Missing Record — NAGAR-LEDGER';
+      document.title = '404 Missing Record — NagrikSeva';
     } else {
-      document.title = 'NAGAR-LEDGER — Mira-Bhayandar Civic Issue & SLA Ledger';
+      document.title = 'NagrikSeva — Mira-Bhayandar Civic Issue & SLA Ledger';
     }
   }, [pathname, inspectedTicket, isKnownRoute]);
 
+  const mapsEnabled = Boolean(MAPS_API_KEY) && !mapsQuotaExceeded;
+
   return (
-    <>
+    <MapsShell apiKey={MAPS_API_KEY} language={store.language}>
+      {mapsQuotaExceeded && (
+        <div className="gmp-quota-banner" role="alert">
+          <span>
+            Google Maps Platform quota reached. If you are the app owner, visit{' '}
+            <a
+              href="https://developers.google.com/maps/ai/ai-studio?utm_campaign=gmp_mcp_codeassist_v1_aistudio#quota_exceeded_errors"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              maps developer site
+            </a>{' '}
+            for instructions to update your account.
+          </span>
+        </div>
+      )}
+
       <a href="#main-content" className="skip-link">
         Skip to main ledger content
       </a>
@@ -214,14 +288,23 @@ export function App() {
         scrollProgress={scrollProgress}
         onNavigate={navigate}
         onOpenReport={() => openReport()}
+        onOpenCopilot={() => setCopilotOpen(true)}
       />
 
       <UtilityBar
         language={store.language}
-        onChangeLanguage={store.setLanguage}
+        onChangeLanguage={(nextLang) => {
+          store.setLanguage(nextLang);
+          void authState.syncPreferredLanguage(nextLang);
+        }}
         theme={store.theme}
         onToggleTheme={store.toggleTheme}
         nowMs={store.nowMs}
+        user={authState.user}
+        authReady={authState.authReady}
+        signingIn={authState.signingIn}
+        onSignInWithGoogle={() => void authState.signInWithGoogle()}
+        onSignOut={() => void authState.signOutUser()}
       />
 
       <main id="main-content" tabIndex={-1}>
@@ -262,6 +345,8 @@ export function App() {
               t={t}
               tickets={store.tickets}
               nowMs={store.nowMs}
+              theme={store.theme}
+              mapsEnabled={mapsEnabled}
               onOpenReport={() => openReport()}
               onJumpToLedger={() => navigate('/', 'live-ledger')}
               onInspectTicket={openInspector}
@@ -304,18 +389,37 @@ export function App() {
       <ReportDrawer
         open={reportOpen}
         t={t}
+        language={store.language}
         tickets={store.tickets}
         confirmedTicketIds={store.confirmedTicketIds}
         nowMs={store.nowMs}
+        theme={store.theme}
+        mapsEnabled={mapsEnabled}
         initialLocalityId={reportInitialLocality}
         onClose={closeReport}
         onConfirmDuplicate={(id) => handleConfirmTicket(id, true)}
         onCreateTicket={(input) => {
           const created = store.createTicket(input);
-          setToastMessage(`Logged ${created.id} into Ward ${created.wardNumber} queue.`);
+          setToastMessage(
+            store.isCloudSynced
+              ? `Logged ${created.id} & synced to Cloud Firestore.`
+              : `Logged ${created.id} into Ward ${created.wardNumber} queue.`
+          );
           return created;
         }}
         onInspectTicket={openInspector}
+      />
+
+      <CivicCopilotDrawer
+        open={copilotOpen}
+        language={store.language}
+        tickets={store.tickets}
+        nowMs={store.nowMs}
+        user={authState.user}
+        authReady={authState.authReady}
+        signingIn={authState.signingIn}
+        onClose={() => setCopilotOpen(false)}
+        onSignInWithGoogle={() => void authState.signInWithGoogle()}
       />
 
       <TicketInspectorModal
@@ -350,7 +454,7 @@ export function App() {
           </button>
         </div>
       )}
-    </>
+    </MapsShell>
   );
 }
 
