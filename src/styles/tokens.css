@@ -1,0 +1,150 @@
+/*
+ * NAGAR-LEDGER Design Tokens
+ * Palette rationale: Warm archival newsprint (#FAF8F4) and deep carbon ink (#111315)
+ * echo traditional Maharashtra municipal gazettes and physical dispatch ledgers,
+ * paired with Municipal Signal Vermilion (#C8321A) strictly for high-intent civic actions
+ * and SLA breach escalations. All text/surface pairs exceed WCAG AA 4.5:1 contrast.
+ */
+
+@layer tokens {
+  :root {
+    /* 9-step Neutral Scale (Archival Newsprint -> Carbon Asphalt) */
+    --neutral-50: #faf8f4;
+    --neutral-100: #f2efe9;
+    --neutral-200: #e2ddd3;
+    --neutral-300: #cac3b6;
+    --neutral-400: #938c80;
+    --neutral-500: #666159;
+    --neutral-600: #4a4741;
+    --neutral-700: #2c2f33;
+    --neutral-800: #1a1d21;
+    --neutral-900: #111315;
+
+    /* 9-step Accent Scale (Municipal Signal Vermilion) */
+    --accent-50: #fff2ef;
+    --accent-100: #ffe0d9;
+    --accent-200: #ffc0b3;
+    --accent-300: #ff947e;
+    --accent-400: #ff6347;
+    --accent-500: #e54528;
+    --accent-600: #c8321a;
+    --accent-700: #a52612;
+    --accent-800: #821d0e;
+    --accent-900: #5e1409;
+
+    /* Semantic Color Tokens (Light Mode Default) */
+    --bg: var(--neutral-50);
+    --bg-elevated: #ffffff;
+    --surface: var(--neutral-100);
+    --surface-hover: #eae5dc;
+    --text: var(--neutral-900);
+    --text-muted: var(--neutral-600);
+    --border: var(--neutral-200);
+    --border-strong: var(--neutral-300);
+
+    --accent: var(--accent-600);
+    --accent-hover: var(--accent-700);
+    --accent-contrast: #ffffff;
+    --accent-subtle: var(--accent-50);
+
+    --success: #146b3a;
+    --success-bg: #ebf7f0;
+    --success-border: #b6dfc5;
+
+    --warning: #8c4e00;
+    --warning-bg: #fdf4e4;
+    --warning-border: #eccb94;
+
+    --danger: #b42318;
+    --danger-bg: #fef0ee;
+    --danger-border: #f3c1ba;
+
+    --focus-ring: var(--accent-600);
+    --selection-bg: var(--accent-600);
+    --selection-text: #ffffff;
+
+    /* Typography */
+    --font-sans: 'Plus Jakarta Sans', 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* Fluid Type Scale (~1.25 ratio) */
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: clamp(0.96875rem, 0.94rem + 0.15vw, 1.0625rem);
+    --text-lg: clamp(1.125rem, 1.05rem + 0.35vw, 1.25rem);
+    --text-xl: clamp(1.3125rem, 1.18rem + 0.65vw, 1.625rem);
+    --text-2xl: clamp(1.625rem, 1.38rem + 1.2vw, 2.25rem);
+    --text-3xl: clamp(2.125rem, 1.55rem + 2.6vw, 3.35rem);
+
+    /* Spacing Scale (4px base unit) */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-7: 3rem;
+    --space-8: 4rem;
+    --space-9: 6rem;
+    --space-10: 8rem;
+    --space-11: 10rem;
+    --space-12: 12rem;
+
+    --section-py: clamp(3.5rem, 6vw, 6.5rem);
+    --container-max: 1240px;
+    --measure-max: 65ch;
+    --header-height: 60px;
+
+    /* Shape & Borders (2px sharp architectural ledger corners) */
+    --radius-sm: 2px;
+    --radius-md: 4px;
+
+    /* Subtle Layered Elevation */
+    --shadow-sm: 0 1px 2px rgba(17, 19, 21, 0.05), 0 1px 1px rgba(17, 19, 21, 0.04);
+    --shadow-md: 0 6px 16px rgba(17, 19, 21, 0.07), 0 2px 4px rgba(17, 19, 21, 0.04);
+    --shadow-lg: 0 18px 40px rgba(17, 19, 21, 0.12), 0 4px 12px rgba(17, 19, 21, 0.06);
+
+    /* Motion */
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --duration-fast: 150ms;
+    --duration-base: 240ms;
+    --duration-slow: 450ms;
+  }
+
+  [data-theme='dark'] {
+    --bg: #111315;
+    --bg-elevated: #171a1e;
+    --surface: #1e2227;
+    --surface-hover: #252a31;
+    --text: #f0ede6;
+    --text-muted: #a9afb8;
+    --border: #2c313a;
+    --border-strong: #414854;
+
+    --accent: var(--accent-400);
+    --accent-hover: #ff7b63;
+    --accent-contrast: #111315;
+    --accent-subtle: rgba(255, 99, 71, 0.14);
+
+    --success: #34d399;
+    --success-bg: rgba(52, 211, 153, 0.12);
+    --success-border: rgba(52, 211, 153, 0.34);
+
+    --warning: #fbbf24;
+    --warning-bg: rgba(251, 191, 36, 0.12);
+    --warning-border: rgba(251, 191, 36, 0.34);
+
+    --danger: #f87171;
+    --danger-bg: rgba(248, 113, 113, 0.14);
+    --danger-border: rgba(248, 113, 113, 0.38);
+
+    --focus-ring: #ff7b63;
+    --selection-bg: #ff6347;
+    --selection-text: #111315;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+    --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 22px 48px rgba(0, 0, 0, 0.52);
+  }
+}

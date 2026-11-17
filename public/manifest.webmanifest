@@ -1,0 +1,16 @@
+{
+  "name": "NAGAR-LEDGER — Mira-Bhayandar Civic Ledger",
+  "short_name": "NAGAR-LEDGER",
+  "description": "Real-time civic issue tracking, priority scoring, and public SLA accountability for Mira-Bhayandar Wards 1–24.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF8F4",
+  "theme_color": "#C8321A",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

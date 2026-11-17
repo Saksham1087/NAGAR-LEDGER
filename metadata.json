@@ -1,0 +1,6 @@
+{
+  "name": "NAGAR-LEDGER — Mira-Bhayandar Civic Works & SLA Accountability",
+  "description": "Public works issue tracker, algorithmic priority scoring, and live SLA accountability ledger for Mira-Bhayandar Municipal Corporation Wards 1–24.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
